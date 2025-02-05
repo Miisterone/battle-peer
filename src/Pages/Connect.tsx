@@ -1,14 +1,30 @@
-import { useNavigate } from 'react-router-dom';
 import {useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 export function Connect() {
     const navigate = useNavigate();
     const [id, setId] = useState<string>();
-    
+
     function login(event: React.FormEvent) {
         event.preventDefault();
-        console.log("Connect with ID: ",id);
-        navigate("/rooms", {state: {id}});
+        console.log("Connect with ID: ", id);
+        getID()
+    }
+
+    async function getID() {
+        const url = "https://localhost:3000/api/connect";
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const json = await response.json();
+            console.log(json);
+        }catch (error: unknown) {
+            console.error((error as Error).message);
+        }
+        navigate("rooms")
     }
 
     return (
@@ -35,7 +51,8 @@ export function Connect() {
                     </div>
 
                     <div>
-                        <button type="submit" className="w-full rounded-md bg-indigo-600 p-2 text-white font-semibold shadow-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                        <button type="submit"
+                                className="w-full rounded-md bg-indigo-600 p-2 text-white font-semibold shadow-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600">
                             Connect
                         </button>
                     </div>
