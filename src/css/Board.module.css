@@ -1,0 +1,33 @@
+.boardContainer {
+    margin: 10px;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    width: fit-content;
+    max-width: 100%;
+}
+
+.title {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(20px, 40px));
+    grid-template-rows: repeat(10, minmax(20px, 40px));
+    gap: 2px;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: repeat(10, minmax(15px, 30px));
+        grid-template-rows: repeat(10, minmax(15px, 30px));
+        gap: 1px;
+    }
+}
