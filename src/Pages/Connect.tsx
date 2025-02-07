@@ -1,17 +1,17 @@
-import {useState} from "react";
-import {useNavigate} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Peer from "peerjs";
 
 export function Connect() {
     const navigate = useNavigate();
-    const [id, setId] = useState<string>();
+    const [myId, setMyId] = useState<string>("");
+    const [idToPeer, setIdToPeer] = useState<string>("");
 
-    function login(event: React.FormEvent) {
-        event.preventDefault();
-        console.log("Connect with ID: ", id);
-        getID()
-    }
+    useEffect(() => {
+        getMyId();
+    }, []);
 
-    async function getID() {
+    async function getMyId() {
         const url = "https://localhost:3000/api/connect";
         try {
             const response = await fetch(url);
@@ -19,12 +19,44 @@ export function Connect() {
                 throw new Error(`Response status: ${response.status}`);
             }
 
-            const json = await response.json();
-            console.log(json);
-        }catch (error: unknown) {
-            console.error((error as Error).message);
+            const body = await response.json();
+            console.log("Mon ID Peer :", body.id);
+            setMyId(body.id);
+        } catch (error: unknown) {
+            console.error("Error Fetch GetMyID "+ (error as Error).message);
         }
-        navigate("rooms")
+    }
+
+    function connectToPeer(event: React.FormEvent) {
+        event.preventDefault();
+
+        if (!idToPeer) {
+            alert("Veuillez entrer un ID Peer !");
+            return;
+        }
+        const peer = new Peer(null, {
+            host: window.location.hostname,
+            port: 3000,
+            path: '/peerjs/myapp'
+        });
+
+        console.log(`Tentative de connexion à ${idToPeer}`);
+        const connection = peer.connect(idToPeer, { reliable: true });
+
+        connection.on("open", () => {
+            console.log(`Connecté à ${idToPeer}`);
+            connection.send("Hello from peer!");
+            
+            navigate("rooms", { state: { idToPeer: idToPeer } });
+        });
+
+        connection.on("data", (data) => {
+            console.log("Données reçues :", data);
+        });
+
+        connection.on("error", (err) => {
+            console.error("Erreur de connexion PeerJS :", err);
+        });
     }
 
     return (
@@ -33,20 +65,22 @@ export function Connect() {
                 <h2 className="text-center text-2xl font-bold text-gray-900">
                     Battle Peer
                 </h2>
-
-                <form onSubmit={login} className="space-y-6">
+                <p className="text-center text-gray-900">
+                    My id: {myId}
+                </p>
+                <form onSubmit={connectToPeer} className="space-y-6">
                     <div>
                         <label htmlFor="idpeer" className="block text-sm font-medium text-gray-700">
-                            Id Peer
+                            Id To Peer
                         </label>
                         <input
                             id="idpeer"
                             name="idpeer"
                             type="text"
                             required
-                            autoComplete="idpeer"
+                            placeholder={"e5az8sqdqz5eae"}
                             className="mt-2 block w-full rounded-md border-gray-300 p-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            onChange={(event) => setId(event.target.value)}
+                            onChange={(event) => setIdToPeer(event.target.value)}
                         />
                     </div>
 
