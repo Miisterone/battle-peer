@@ -12,7 +12,7 @@ export function Connect() {
     }, []);
 
     async function getMyId() {
-        const url = "https://localhost:3000/api/connect";
+        const url = "http://localhost:3000/api/connect";
         try {
             const response = await fetch(url);
             if (!response.ok) {
@@ -27,36 +27,42 @@ export function Connect() {
         }
     }
 
-    function connectToPeer(event: React.FormEvent) {
+    async function connectToPeer(event: React.FormEvent) {
         event.preventDefault();
-
         if (!idToPeer) {
             alert("Veuillez entrer un ID Peer !");
             return;
         }
-        const peer = new Peer(null, {
-            host: window.location.hostname,
-            port: 3000,
-            path: '/peerjs/myapp'
-        });
 
-        console.log(`Tentative de connexion à ${idToPeer}`);
-        const connection = peer.connect(idToPeer, { reliable: true });
+        const url = `http://localhost:3000/api/connect-to/${idToPeer}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
 
-        connection.on("open", () => {
-            console.log(`Connecté à ${idToPeer}`);
-            connection.send("Hello from peer!");
-            
-            navigate("rooms", { state: { idToPeer: idToPeer } });
-        });
+            const peer = new Peer(null, {
+                host: window.location.hostname,
+                port: 3000,
+                path: '/peerjs/myapp'
+            });
 
-        connection.on("data", (data) => {
-            console.log("Données reçues :", data);
-        });
+            console.log(`Tentative de connexion à ${idToPeer}`);
+            const connection = peer.connect(idToPeer, {reliable: true});
 
-        connection.on("error", (err) => {
-            console.error("Erreur de connexion PeerJS :", err);
-        });
+            connection.on("open", () => {
+                console.log(`Connecté à ${idToPeer}`);
+                connection.send("Hello from peer!");
+
+                navigate("rooms", {state: {idToPeer: idToPeer, connection: connection}});
+            });
+
+            connection.on("error", (err) => {
+                console.error("Erreur de connexion PeerJS :", err);
+            });
+        } catch (error: unknown) {
+            console.error("Error Fetch GetMyID " + (error as Error).message);
+        }
     }
 
     return (
