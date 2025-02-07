@@ -7,40 +7,44 @@ export function Connect() {
     const navigate = useNavigate();
     const [myId, setMyId] = useState<string>("");
     const [idToPeer, setIdToPeer] = useState<string>("");
-    const [peer, setPeer] = useState<Peer | null>(null);
-    const { setConnection } = usePeer();
+
+    const { peer, setPeer, setConnection } = usePeer();
 
     useEffect(() => {
-        const newPeer = new Peer({
-            host: window.location.hostname,
-            port: 3001,
-            path: '/peerjs'
-        });
-
-        newPeer.on("open", (id) => {
-            console.log("My peer ID:", id);
-            setMyId(id);
-        });
-
-        newPeer.on("connection", (conn) => {
-            console.log("Connexion entrante de :", conn.peer);
-            conn.on("open", () => {
-                console.log(`Connexion établie avec ${conn.peer}`);
-                conn.send("Hello from peer!");
-                setConnection(conn); // Stocke la connexion dans le contexte
-                navigate("rooms", { state: { idToPeer: conn.peer } });
+        if (!peer) {
+            const newPeer = new Peer({
+                host: window.location.hostname,
+                port: 3000,
+                path: '/peerjs'
             });
-            conn.on("data", (data) => {
-                console.log("Données reçues sur la connexion entrante :", data);
-            });
-        });
 
-        setPeer(newPeer);
+            newPeer.on("open", (id) => {
+                console.log("My peer ID:", id);
+                setMyId(id);
+            });
+
+            newPeer.on("connection", (conn) => {
+                console.log("Connexion entrante de :", conn.peer);
+                conn.once("open", () => {
+                    console.log(`Connexion établie avec ${conn.peer}`);
+                    conn.send("Hello from peer!");
+                    setConnection(conn);
+                    navigate("rooms", { state: { idToPeer: conn.peer } });
+                });
+                conn.on("data", (data) => {
+                    console.log("Données reçues sur la connexion entrante :", data);
+                });
+            });
+
+            setPeer(newPeer);
+        }
 
         return () => {
-            newPeer.destroy();
+            // if (peer) {
+            //     peer.destroy()
+            // }
         };
-    }, [navigate, setConnection]);
+    }, [peer, navigate, setPeer, setConnection]);
 
     async function connectToPeer(event: React.FormEvent) {
         event.preventDefault();
@@ -60,8 +64,8 @@ export function Connect() {
         conn.on("open", () => {
             console.log(`Connecté à ${idToPeer}`);
             conn.send("Hello from peer!");
-            setConnection(conn); // Stocke la connexion dans le contexte
-            navigate("rooms", { state: { idToPeer } }); // On passe uniquement l'ID
+            setConnection(conn);
+            navigate("rooms", { state: { idToPeer } });
         });
 
         conn.on("error", (err) => {
@@ -72,7 +76,9 @@ export function Connect() {
     return (
         <div className="flex h-screen items-center justify-center bg-gray-700">
             <div className="w-full max-w-md space-y-6 bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-center text-2xl font-bold text-gray-900">Battle Peer</h2>
+                <h2 className="text-center text-2xl font-bold text-gray-900">
+                    Battle Peer
+                </h2>
                 <p className="text-center text-gray-900">Mon ID : {myId}</p>
                 <form onSubmit={connectToPeer} className="space-y-6">
                     <div>
